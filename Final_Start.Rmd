@@ -1,0 +1,51 @@
+---
+title: "Final Project Starter"
+author: "Joe Margolis"
+date: '2022-10-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(ggmap)
+library(dplyr)
+library(rvest)
+library(stringr)
+```
+
+```{r}
+GDPData <- read_csv("GDP_Data.csv")
+```
+
+```{r}
+
+GDPLong <- GDPData %>%
+  pivot_longer(cols=c(`1960 [YR1960]`, `1961 [YR1961]`, `1962 [YR1962]`, `1963 [YR1963]`, `1964 [YR1964]`, `1965 [YR1965]`, `1966 [YR1966]`, `1967 [YR1967]`, `1968 [YR1968]`, `1969 [YR1969]`, `1970 [YR1970]`, `1971 [YR1971]`, `1972 [YR1972]`, `1973 [YR1973]`, `1974 [YR1974]`, `1975 [YR1975]`, `1976 [YR1976]`, `1977 [YR1977]`, `1978 [YR1978]`, `1979 [YR1979]`, `1980 [YR1980]`, `1981 [YR1981]`, `1982 [YR1982]`, `1983 [YR1983]`, `1984 [YR1984]`, `1985 [YR1985]`, `1986 [YR1986]`, `1987 [YR1987]`, `1988 [YR1988]`, `1989 [YR1989]`, `1990 [YR1990]`, `1991 [YR1991]`, `1992 [YR1992]`, `1993 [YR1993]`, `1994 [YR1994]`, `1995 [YR1995]`, `1996 [YR1996]`, `1997 [YR1997]`, `1998 [YR1998]`, `1999 [YR1999]`, `2000 [YR2000]`, `2001 [YR2001]`, `2002 [YR2002]`, `2003 [YR2003]`, `2004 [YR2004]`, `2005 [YR2005]`, `2006 [YR2006]`, `2007 [YR2007]`, `2008 [YR2008]`, `2009 [YR2009]`, `2010 [YR2010]`, `2011 [YR2011]`, `2012 [YR2012]`, `2013 [YR2013]`, `2014 [YR2014]`, `2015 [YR2015]`, `2016 [YR2016]`, `2017 [YR2017]`, `2018 [YR2018]`, `2019 [YR2019]`, `2020 [YR2020]`, `2021 [YR2021]`),names_to="Year",values_to="GDPPerCapita") %>%
+  filter(GDPPerCapita != "..")
+
+
+newYear <- substr(GDPLong$Year, 1, 4)  
+
+GDPLong <- GDPLong %>%
+  cbind(newYear) %>%
+  mutate(GDPPerCapita = as.numeric(GDPPerCapita)) %>%
+  mutate(Threshold = "") %>%
+  mutate(Threshold = ifelse(GDPPerCapita < 1000, "Poverty", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 1000 & GDPPerCapita< 2000, "Low Income", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 2000 & GDPPerCapita< 5000, "Low-Mid Income", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 5000 & GDPPerCapita< 10000, "Upper-Mid Income", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 10000 & GDPPerCapita< 20000, "Developed", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 20000, "Wealthy", Threshold))
+```
+
+```{r}
+GDPOnlyThresh <- GDPLong %>%
+  mutate(newYear = as.numeric(newYear)) %>%
+  group_by(`Country Name`, Threshold) %>%
+  summarise("Min Year" = min(newYear))
+```
+
