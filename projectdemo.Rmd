@@ -1,0 +1,421 @@
+---
+title: "Survival Analysis Final Project"
+author: "Erik Hager, Joe Margolis, Declan Elias"
+date: "2022-10-05"
+output: html_document
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(survival)
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(ggmap)
+library(dplyr)
+library(rvest)
+library(stringr)
+```
+
+```{r}
+GDPData <- read_csv('allcountriescsv.csv')
+```
+
+```{r}
+GDPLong <- GDPData %>%
+  pivot_longer(cols=c(`1960 [YR1960]`, `1961 [YR1961]`, `1962 [YR1962]`, `1963 [YR1963]`, `1964 [YR1964]`, `1965 [YR1965]`, `1966 [YR1966]`, `1967 [YR1967]`, `1968 [YR1968]`, `1969 [YR1969]`, `1970 [YR1970]`, `1971 [YR1971]`, `1972 [YR1972]`, `1973 [YR1973]`, `1974 [YR1974]`, `1975 [YR1975]`, `1976 [YR1976]`, `1977 [YR1977]`, `1978 [YR1978]`, `1979 [YR1979]`, `1980 [YR1980]`, `1981 [YR1981]`, `1982 [YR1982]`, `1983 [YR1983]`, `1984 [YR1984]`, `1985 [YR1985]`, `1986 [YR1986]`, `1987 [YR1987]`, `1988 [YR1988]`, `1989 [YR1989]`, `1990 [YR1990]`, `1991 [YR1991]`, `1992 [YR1992]`, `1993 [YR1993]`, `1994 [YR1994]`, `1995 [YR1995]`, `1996 [YR1996]`, `1997 [YR1997]`, `1998 [YR1998]`, `1999 [YR1999]`, `2000 [YR2000]`, `2001 [YR2001]`, `2002 [YR2002]`, `2003 [YR2003]`, `2004 [YR2004]`, `2005 [YR2005]`, `2006 [YR2006]`, `2007 [YR2007]`, `2008 [YR2008]`, `2009 [YR2009]`, `2010 [YR2010]`, `2011 [YR2011]`, `2012 [YR2012]`, `2013 [YR2013]`, `2014 [YR2014]`, `2015 [YR2015]`, `2016 [YR2016]`, `2017 [YR2017]`, `2018 [YR2018]`, `2019 [YR2019]`, `2020 [YR2020]`, `2021 [YR2021]`),names_to="Year",values_to="GDPPerCapita") %>%
+  filter(GDPPerCapita != "..")
+newYear <- substr(GDPLong$Year, 1, 4)  
+GDPLong <- GDPLong %>%
+  cbind(newYear) %>%
+  mutate(GDPPerCapita = as.numeric(GDPPerCapita)) %>%
+  mutate(Threshold = "") %>%
+  mutate(Threshold = ifelse(GDPPerCapita < 1000, "Poverty", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 1000 & GDPPerCapita< 2000, "Low Income", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 2000 & GDPPerCapita< 5000, "Low-Mid Income", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 5000 & GDPPerCapita< 10000, "Upper-Mid Income", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 10000 & GDPPerCapita< 20000, "Developed", Threshold)) %>%
+  mutate(Threshold = ifelse(GDPPerCapita >= 20000, "Wealthy", Threshold))
+```
+
+
+
+```{r}
+GDPOnlyThresh <- GDPLong %>%
+  mutate(newYear = as.numeric(newYear)) %>%
+  mutate(GDPPerCapita = as.numeric(GDPPerCapita)) %>% 
+  group_by(`Country Name`, Threshold) %>%
+  mutate(minyear = min(newYear), "Max Year" = max(newYear)) %>% 
+  mutate(minyear = as.numeric(minyear)) %>% 
+  ungroup() %>% 
+  #filter(minyear == newYear)
+  mutate(firstgdp = "") %>%
+  mutate(firstgdp = as.numeric(firstgdp)) %>%
+  mutate(firstgdp = ifelse(minyear == newYear, GDPPerCapita, firstgdp )) %>%
+  mutate(firstgdp = ifelse(minyear != newYear, 0, firstgdp )) %>%
+  group_by(`Country Name`, Threshold) %>% 
+  mutate(firstgdp = max(firstgdp)) %>% 
+  mutate(doubleval = 2 * firstgdp) %>%
+  ungroup() %>%
+  
+  mutate(lowval = "") %>%
+  mutate(lowval = as.numeric(lowval)) %>%
+  mutate(lowval = ifelse(Threshold == "Low Income", doubleval, lowval )) %>%
+  mutate(lowval = ifelse(Threshold != "Low Income", 1000000, lowval )) %>% 
+  
+  mutate(lowmidval = "") %>%
+  mutate(lowmidval = as.numeric(lowmidval)) %>%
+  mutate(lowmidval = ifelse(Threshold == "Low-Mid Income", doubleval, lowmidval )) %>%
+  mutate(lowmidval = ifelse(Threshold != "Low-Mid Income", 1000000, lowmidval )) %>% 
+  
+  mutate(upmidval = "") %>%
+  mutate(upmidval = as.numeric(upmidval)) %>%
+  mutate(upmidval = ifelse(Threshold == "Upper-Mid Income", doubleval, upmidval )) %>%
+  mutate(upmidval = ifelse(Threshold != "Upper-Mid Income", 10000000, upmidval )) %>% 
+  
+  mutate(devval = "") %>%
+  mutate(devval = as.numeric(devval)) %>%
+  mutate(devval = ifelse(Threshold == "Developed", doubleval, devval )) %>%
+  mutate(devval = ifelse(Threshold != "Developed", 1000000, devval )) %>% 
+  
+  mutate(weaval = "") %>%
+  mutate(weaval = as.numeric(weaval)) %>%
+  mutate(weaval = ifelse(Threshold == "Wealthy", doubleval, weaval )) %>%
+  mutate(weaval = ifelse(Threshold != "Wealthy", 100000000, weaval )) %>% 
+  
+  group_by(`Country Name`) %>% 
+  mutate(lowval = min(lowval)) %>% 
+  mutate(lowmidval = min(lowmidval)) %>%
+  mutate(upmidval = min(upmidval)) %>%
+  mutate(devval = min(devval)) %>%
+  mutate(weaval = min(weaval)) %>%
+  
+  
+  mutate(lowyear = "") %>%
+  mutate(lowyear = as.numeric(lowyear)) %>% 
+  mutate(lowyear = ifelse(GDPPerCapita >= lowval, newYear, lowyear )) %>% 
+  mutate(lowyear = ifelse(GDPPerCapita < lowval, 10000, lowyear )) %>% 
+  mutate(lowyear = min(lowyear)) %>% 
+  
+  ungroup() %>% 
+  
+  group_by(`Country Name`) %>% 
+  mutate(lowmidyear = "") %>%
+  mutate(lowmidyear = as.numeric(lowmidyear)) %>% 
+  mutate(lowmidyear = ifelse(GDPPerCapita >= lowmidval, newYear, lowmidyear )) %>% 
+  mutate(lowmidyear = ifelse(GDPPerCapita < lowmidval, 10000, lowmidyear )) %>% 
+  mutate(lowmidyear = min(lowmidyear)) %>% 
+   
+  ungroup() %>% 
+  
+  group_by(`Country Name`) %>%
+  mutate(upmidyear = "") %>%
+  mutate(upmidyear = as.numeric(upmidyear)) %>% 
+  mutate(upmidyear = ifelse(GDPPerCapita >= upmidval, newYear, upmidyear )) %>% 
+  mutate(upmidyear = ifelse(GDPPerCapita < upmidval, 10000, upmidyear )) %>% 
+  mutate(upmidyear = min(upmidyear)) %>% 
+  
+   ungroup() %>% 
+  
+  group_by(`Country Name`) %>%
+  mutate(devyear = "") %>%
+  mutate(devyear = as.numeric(devyear)) %>% 
+  mutate(devyear = ifelse(GDPPerCapita >= devval, newYear, devyear )) %>% 
+  mutate(devyear = ifelse(GDPPerCapita < devval, 10000, devyear )) %>% 
+  mutate(devyear = min(devyear)) %>%
+  
+   ungroup() %>% 
+  
+  group_by(`Country Name`) %>%
+  mutate(weayear = "") %>%
+  mutate(weayear = as.numeric(weayear)) %>% 
+  mutate(weayear = ifelse(GDPPerCapita >= weaval, newYear, weayear )) %>% 
+  mutate(weayear = ifelse(GDPPerCapita < weaval, 10000, weayear )) %>% 
+  mutate(weayear = min(weayear)) %>%
+  ungroup() %>% 
+  
+  mutate(aggyear = "") %>% 
+  mutate(aggyear = as.numeric(aggyear)) %>%
+  mutate(aggyear = ifelse(Threshold == "Poverty", 0, aggyear )) %>%
+  mutate(aggyear = ifelse(Threshold == "Low Income", lowyear, aggyear )) %>%
+  mutate(aggyear = ifelse(Threshold == "Low-Mid Income", lowmidyear, aggyear )) %>%
+  mutate(aggyear = ifelse(Threshold == "Upper-Mid Income", upmidyear, aggyear )) %>%
+  mutate(aggyear = ifelse(Threshold == "Developed", devyear, aggyear )) %>%
+  mutate(aggyear = ifelse(Threshold == "Wealthy", weayear, aggyear )) %>%
+  
+  
+  
+  
+  
+  
+  ungroup() %>%
+  
+  filter(aggyear > 1) %>%
+  mutate(status = "") %>% 
+  mutate(status = as.numeric(status)) %>% 
+  mutate(status = ifelse(aggyear >3000,  0, status) )%>% 
+  mutate(status = ifelse(aggyear <3000,  1, status) )%>% 
+  
+  mutate(duration = "") %>% 
+  mutate(duration = as.numeric(duration)) %>% 
+  mutate(duration = ifelse(aggyear <3000,  (aggyear - minyear), duration) )%>% 
+  group_by(`Country Name`) %>% 
+  mutate(duration = ifelse(aggyear >3000,  max(newYear) - minyear, duration) ) %>% 
+  ungroup() %>% 
+  
+  group_by(`Country Name`) %>% 
+  mutate(earlyyear = min(newYear)) %>%
+  mutate(lateyear = max(newYear)) %>%
+  
+  
+  group_by(`Country Name`, Threshold)
+  
+  
+  
+  
+
+
+
+ 
+```
+
+
+```{r}
+finalgdp = GDPOnlyThresh %>% 
+  distinct() %>% 
+  filter(duration > 0) %>%
+  ungroup() %>% 
+  
+  group_by(`Country Name`, Threshold) %>% 
+  summarize( duration = duration, status = status, minyear = minyear, "Max Year" = `Max Year`, earlyyear = earlyyear, lateyear = lateyear     ) %>% 
+  distinct() %>% 
+  mutate("doublingTime" = duration) %>% 
+  select(- duration) %>% 
+  ungroup() %>% 
+  group_by(`Country Name`) %>% 
+  mutate(num2 = n()) %>% 
+  filter(num2 > 1) %>% 
+  ungroup() %>% 
+  mutate(diff = `Max Year`- minyear) %>% 
+  filter( (minyear != earlyyear | diff > 0)) %>% 
+  group_by(`Country Name`) %>% 
+  mutate(maxdiff =  max(minyear) - min (`Max Year`) ) %>% 
+  ungroup() %>% 
+  filter( (minyear != earlyyear | maxdiff > 1)) %>% 
+  filter(`Country Name` != "Chile" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Colombia" | Threshold != "Low Income") %>% 
+  filter(`Country Name` != "Costa Rica" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Cyprus" | Threshold != "Upper-Mid Income") %>% 
+  filter(`Country Name` != "Dominican Republic" | Threshold != "Low Income") %>% 
+  filter(`Country Name` != "Estonia" | Threshold != "Upper-Mid Income") %>% 
+  filter(`Country Name` != "Gabon" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Greece" | Threshold != "Upper-Mid Income") %>% 
+  filter(`Country Name` != "Grenada" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Hong Kong SAR, China" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Japan" | Threshold != "Upper-Mid Income") %>% 
+  filter(`Country Name` != "Korea, Rep." | Threshold != "Low Income") %>% 
+  filter(`Country Name` != "Malaysia" | Threshold != "Low Income") %>% 
+  filter(`Country Name` != "Malta" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Mauritius" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Oman" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Paraguay" | Threshold != "Low Income") %>% 
+  filter(`Country Name` != "Poland" | Threshold != "Upper-Mid Income") %>% 
+  filter(`Country Name` != "Portugal" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Puerto Rico" | Threshold != "Upper-Mid Income") %>% 
+  filter(`Country Name` != "Romania" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Seychelles" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Singapore" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Spain" | Threshold != "Upper-Mid Income") %>% 
+  filter(`Country Name` != "St. Kitts and Nevis" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "St. Lucia" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Trinidad and Tobago" | Threshold != "Low-Mid Income") %>% 
+  filter(`Country Name` != "Turkmenistan" | Threshold != "Low-Mid Income") %>% 
+  mutate("maxyear" = `Max Year`)
+  
+  
+finalgdp[10,4] = 2004
+finalgdp[10,8] = 3
+finalgdp[10,3] = 1
+
+finalgdp[15,4] = 1997
+finalgdp[15,8] = 10
+
+finalgdp[85,4] = 1991
+finalgdp[85,8] = 6
+
+finalgdp[96,4] = 2001
+finalgdp[96,8] = 12
+finalgdp[96,3] = 1
+
+finalgdp[132,4] = 1988
+finalgdp[132,8] = 20
+
+finalgdp[169,4] = 1963
+finalgdp[169,8] = 27
+
+finalgdp[181,4] = 1989
+finalgdp[181,8] = 24 
+  
+finalgdp = finalgdp %>% 
+  
+  mutate(doublingStart = "") %>% 
+  mutate(doublingStart = as.numeric(doublingStart)) %>% 
+  mutate(doublingStart = minyear) %>% 
+  mutate(doublingEnd = doublingStart + doublingTime) %>% 
+  select(`Country Name`, Threshold, doublingStart, doublingEnd, doublingTime, status)
+
+
+```
+
+
+
+
+```{r}
+plot(ecdf(finalgdp$doublingTime), verticals = TRUE, do.points = FALSE)
+survreg( Surv(doublingTime) ~ 1, data = finalgdp, dist = "gaussian"   )
+survreg( Surv(doublingTime) ~ 1, data = finalgdp, dist = "weibull"   )
+
+mean = 21.09375
+sd = 13.53397  
+
+h = function(x) {
+  
+  pnorm(x, mean = mean, sd = sd)
+}
+
+curve(h, add = TRUE, col = "red")
+
+
+scale = exp(3.160063)
+shape = 1/ 0.6225595
+
+w = function(x) {
+  
+  pweibull(x, shape= shape, scale = scale)
+}
+
+curve(w, add = TRUE, col = "blue")
+```
+
+
+
+```{r}
+df1 <- finalgdp[(finalgdp$Threshold == "Low Income"), ]
+df2 <- finalgdp[(finalgdp$Threshold == "Low-Mid Income"), ]
+df3 <- finalgdp[(finalgdp$Threshold == "Upper-Mid Income"), ]
+df4 <- finalgdp[(finalgdp$Threshold == "Developed"), ]
+df5 <- finalgdp[(finalgdp$Threshold == "Wealthy"), ]
+
+km1 = survfit( Surv(doublingTime, (status)) ~ 1, data = df1   )
+km2 = survfit( Surv(doublingTime, (status)) ~ 1, data = df2   )
+km3 = survfit( Surv(doublingTime, (status)) ~ 1, data = df3   )
+km4 = survfit( Surv(doublingTime, (status)) ~ 1, data = df4   )
+km5 = survfit( Surv(doublingTime, (status)) ~ 1, data = df5   )
+
+
+
+
+plot(km1, conf.int = FALSE)
+lines(km2, conf.int = FALSE, col = "red")
+lines(km3, conf.int = FALSE, col = "blue")
+lines(km4, conf.int = FALSE, col = "orange")
+lines(km5, conf.int = FALSE, col = "green")
+```
+
+
+## Governments 
+
+```{r}
+Govs <- read_csv("https://raw.githubusercontent.com/owid/notebooks/main/BastianHerre/democracy/datasets/final/bmr_final.csv")
+```
+
+```{r}
+Govs <- Govs %>%
+  filter(country_name %in% finalgdp$`Country Name`)
+
+GovGDP <- finalgdp %>%
+  left_join(Govs, by = c("Country Name"="country_name", "doublingStart"="year")) 
+
+
+
+GovGDP[2,7] <- 1
+GovGDP[7,7] <- 1
+GovGDP[11,7] <- 0
+GovGDP[13,7] <- 1
+GovGDP[16,7] <- 3
+GovGDP[19,7] <- 3
+GovGDP[29, 7] <- 1
+GovGDP[38,7] <- 0
+GovGDP[44,7] <- 3
+GovGDP[47,7] <- 1
+GovGDP[53,7] <- 4
+GovGDP[63,7] <- 0
+GovGDP[66,7] <- 0
+GovGDP[71,7] <- 1
+GovGDP[83,7] <- 0
+GovGDP[88,7] <- 1
+GovGDP[97,7] <- 1
+GovGDP[98,7] <- 1
+GovGDP[99,7] <- 1
+GovGDP[100,7] <- 1
+GovGDP[101,7] <- 1
+GovGDP[104,7] <- 0
+GovGDP[119,7] <- 3
+GovGDP[126,7] <- 1
+GovGDP[134,7] <- 1
+GovGDP[148,7] <- 0
+GovGDP[152,7] <- 4
+GovGDP[156,7] <- 3
+GovGDP[163,7] <- 1
+GovGDP[164,7] <- 1
+GovGDP[165,7] <- 1
+GovGDP[166,7] <- 1
+GovGDP[167,7] <- 1
+GovGDP[168,7] <- 1
+GovGDP[169,7] <- 1
+GovGDP[170,7] <- 1
+GovGDP[172,7] <- 3
+GovGDP[180,7] <- 1
+GovGDP[181,7] <- 1
+GovGDP[182,7] <- 1
+GovGDP[191,7] <- 0
+GovGDP[192,7] <- 4
+```
+
+
+```{r}
+Gov0 <- GovGDP %>%
+  filter(regime_bmr_owid == 0 | regime_bmr_owid == 4)
+Gov1 <- GovGDP %>%
+  filter(regime_bmr_owid == 1 | regime_bmr_owid ==3)
+Gov3 <- GovGDP %>%
+  filter(regime_bmr_owid == 3)
+Gov4 <- GovGDP %>%
+  filter(regime_bmr_owid == 4)
+
+Govkm0 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov0  )
+Govkm1 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov1   )
+Govkm3 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov3  )
+Govkm4 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov4   )
+
+plot(Govkm0, conf.int = FALSE)
+lines(Govkm1, conf.int = FALSE, col = "red")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
