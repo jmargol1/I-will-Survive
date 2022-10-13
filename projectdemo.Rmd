@@ -19,6 +19,7 @@ library(ggmap)
 library(dplyr)
 library(rvest)
 library(stringr)
+library(kableExtra)
 ```
 
 ```{r}
@@ -327,7 +328,7 @@ lines(km5, conf.int = FALSE, col = "green")
 ```
 
 
-## Governments 
+## Governments Overall
 
 ```{r}
 Govs <- read_csv("https://raw.githubusercontent.com/owid/notebooks/main/BastianHerre/democracy/datasets/final/bmr_final.csv")
@@ -346,13 +347,13 @@ GovGDP[2,7] <- 1
 GovGDP[7,7] <- 1
 GovGDP[11,7] <- 0
 GovGDP[13,7] <- 1
-GovGDP[16,7] <- 3
-GovGDP[19,7] <- 3
+GovGDP[16,7] <- 1
+GovGDP[19,7] <- 1
 GovGDP[29, 7] <- 1
 GovGDP[38,7] <- 0
-GovGDP[44,7] <- 3
+GovGDP[44,7] <- 1
 GovGDP[47,7] <- 1
-GovGDP[53,7] <- 4
+GovGDP[53,7] <- 0
 GovGDP[63,7] <- 0
 GovGDP[66,7] <- 0
 GovGDP[71,7] <- 1
@@ -364,12 +365,12 @@ GovGDP[99,7] <- 1
 GovGDP[100,7] <- 1
 GovGDP[101,7] <- 1
 GovGDP[104,7] <- 0
-GovGDP[119,7] <- 3
+GovGDP[119,7] <- 1
 GovGDP[126,7] <- 1
 GovGDP[134,7] <- 1
 GovGDP[148,7] <- 0
-GovGDP[152,7] <- 4
-GovGDP[156,7] <- 3
+GovGDP[152,7] <- 1
+GovGDP[156,7] <- 0
 GovGDP[163,7] <- 1
 GovGDP[164,7] <- 1
 GovGDP[165,7] <- 1
@@ -378,12 +379,12 @@ GovGDP[167,7] <- 1
 GovGDP[168,7] <- 1
 GovGDP[169,7] <- 1
 GovGDP[170,7] <- 1
-GovGDP[172,7] <- 3
+GovGDP[172,7] <- 1
 GovGDP[180,7] <- 1
 GovGDP[181,7] <- 1
 GovGDP[182,7] <- 1
 GovGDP[191,7] <- 0
-GovGDP[192,7] <- 4
+GovGDP[192,7] <- 0
 ```
 
 
@@ -397,25 +398,224 @@ Gov3 <- GovGDP %>%
 Gov4 <- GovGDP %>%
   filter(regime_bmr_owid == 4)
 
-Govkm0 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov0  )
-Govkm1 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov1   )
-Govkm3 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov3  )
-Govkm4 = survfit( Surv(doublingTime, (status)) ~ 1, data = Gov4   )
+Govkm0 = survfit( Surv(doublingTime, (status)) ~ 1, conf.type = 'plain',  data = Gov0  )
+Govkm1 = survfit( Surv(doublingTime, (status)) ~ 1, conf.type = 'plain', data = Gov1   )
 
-plot(Govkm0, conf.int = FALSE)
+plot(Govkm0, conf.int = TRUE, xlab = "Years", ylab = "GDP Doubling Time Probability", main = "GDP Doubling Times of Democracies vs. Non-Democracies")
+lines(Govkm1, conf.int = TRUE, col = "red")
+legend(1,0.2,c("Non-Democracy","Democracy"),col=c("black","red") , text.col=c("black","red") , lty=1 , cex=0.8 )
+
+```
+
+## Non-Democracy Model Fitting
+
+```{r}
+survreg( Surv(doublingTime) ~ 1, data = Gov0, dist = "gaussian"   )
+survreg( Surv(doublingTime) ~ 1, data = Gov0, dist = "weibull"   )
+survreg( Surv(doublingTime) ~ 1, data = Gov0, dist = "exponential"   )
+```
+
+```{r}
+
+mean = 22.21333 
+sd = 15.51455   
+
+NoDemNorm = function(x) {
+  
+  pnorm(x, mean = mean, sd = sd)
+}
+
+plot(ecdf(Gov0$doublingTime), verticals = TRUE, do.points = FALSE)
+
+curve(NoDemNorm, add = TRUE, col = "red")
+
+
+scale = exp(3.201655)
+shape = 1/ 0.6853502
+
+NoDemWeib = function(x) {
+  
+  pweibull(x, shape= shape, scale = scale)
+}
+
+curve(NoDemWeib, add = TRUE, col = "blue")
+
+rate = 1/3.100693
+
+NoDemExp = function(x) {
+  
+  pweibull(x, rate)
+}
+
+curve(NoDemExp, add = TRUE, col = "green")
+```
+
+## Democracy Model Fitting
+
+```{r}
+survreg( Surv(doublingTime) ~ 1, data = Gov1, dist = "gaussian"   )
+survreg( Surv(doublingTime) ~ 1, data = Gov1, dist = "weibull"   )
+survreg( Surv(doublingTime) ~ 1, data = Gov1, dist = "exponential"   )
+```
+
+```{r}
+
+mean = 20.34234 
+sd = 12.14366   
+
+DemNorm = function(x) {
+  
+  pnorm(x, mean = mean, sd = sd)
+}
+
+plot(ecdf(Gov1$doublingTime), verticals = TRUE, do.points = FALSE)
+
+curve(DemNorm, add = TRUE, col = "red")
+
+
+scale = exp(3.127892)
+shape = 1/ 0.579322
+
+DemWeib = function(x) {
+  
+  pweibull(x, shape= shape, scale = scale)
+}
+
+curve(DemWeib, add = TRUE, col = "blue")
+
+rate = 1/3.012705
+
+DemExp = function(x) {
+  
+  pweibull(x, rate)
+}
+
+curve(DemExp, add = TRUE, col = "green")
+```
+## Adding Models To Kaplan Meier Plot
+
+```{r}
+survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "gaussian"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "weibull"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "exponential"   )
+```
+
+```{r}
+mean = 33.95255
+sd = 21.82537
+
+NoDemNormCens = function(x) {
+  
+  1-pnorm(x, mean = mean, sd = sd)
+}
+
+scale = exp(3.765584)
+shape = 1/ 0.7950847
+
+NoDemWeibCens = function(x) {
+  
+  1-pweibull(x, shape= shape, scale = scale)
+}
+
+rate = 1/3.862833 
+
+NoDemExpCens = function(x) {
+  
+  1-pweibull(x, rate)
+}
+
+plot(Govkm0, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Non-Democracies")
+curve(NoDemNormCens, add = TRUE, col = "red")
+curve(NoDemWeibCens, add = TRUE, col = "blue")
+curve(NoDemExpCens, add = TRUE, col = "green")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+```
+
+```{r}
+survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "gaussian"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "weibull"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "exponential"   )
+```
+
+```{r}
+mean = 29.98795
+sd = 13.2189
+
+DemNormCens = function(x) {
+  
+  1-pnorm(x, mean = mean, sd = sd)
+}
+
+scale = exp( 3.542103)
+shape = 1/ 0.4431151 
+
+DemWeibCens = function(x) {
+  
+  1-pweibull(x, shape= shape, scale = scale)
+}
+
+rate = 1/3.790409
+
+DemExpCens = function(x) {
+  
+  1-pweibull(x, rate)
+}
+
+plot(Govkm1, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Democracies")
+curve(DemNormCens, add = TRUE, col = "red")
+curve(DemWeibCens, add = TRUE, col = "blue")
+curve(DemExpCens, add = TRUE, col = "green")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+```
+
+```{r}
+plot(Govkm0, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Comparing Weibull Models with Kaplan-Meiers")
 lines(Govkm1, conf.int = FALSE, col = "red")
+curve(NoDemWeibCens, add = TRUE, col = "green")
+curve(DemWeibCens, add = TRUE, col = "blue")
+legend(1,0.3,c("Non-Democracy Kaplan-Meier","Democracy Kaplan-Meier", "Non-Democracy Weibull", "Democracy Weibull"),col=c("black","red", "green", "blue") , text.col=c("black","red", "green", "blue") , lty=1 , cex=0.8 )
+```
+
+## Log Rank Test Democracy vs. Non-Democracy
+
+```{r}
+survdiff( Surv(doublingTime,status) ~ regime_bmr_owid , data=GovGDP )
+```
+```{r}
+`Democracy Status` <- c("Non-Democracy", "Democracy")
+`Number of Countries` <- c(75,111)
+`Observed Doubling Times` <- c(34,52)
+`Expected Doubling Times` <- c(36.7, 49.3)
+`(O-E)^2/E` <- c(0.194, 0.144)
+`(O-E)^2/V` <- c(0.355,0.355)
+
+LRGovTable <- data.frame(`Democracy Status`,`Number of Countries`, `Observed Doubling Times`, `Expected Doubling Times`, `(O-E)^2/E`, `(O-E)^2/V` )
+
+LRGovTable %>%
+  kbl(caption = "Log Rank Table Comparing GDP Doubling Times for Democracies and Non-Democracies", col.names = c("Democracy Status","Number of Countries","Observed GDP Doubling Time","Expected GDP Doubling Time", "(O-E)^2/E", "(O-E)^2/V")) %>%
+  kable_classic_2()
 ```
 
 
+```{r}
+testStat = 0.194 + 0.144
+1 - pchisq( testStat , df=1 )
+```
 
+Not enough evidence to prove that democracies have different doubling times than non-democracies
 
+## Hazard Ratio
 
+```{r}
+( 34/36.7 ) / ( 52/49.3 )
+```
 
+```{r}
+Lower <- 0.8783274*exp( -1.96*sqrt( 1/36.7 + 1/49.3 ) )
+Upper <- 0.8783274*exp( 1.96*sqrt( 1/36.7 + 1/49.3) )
 
-
-
-
-
-
-
+Lower
+Upper
+```
+Once again not enough evidence to say different doubling times
 
