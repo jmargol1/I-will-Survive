@@ -353,7 +353,8 @@ RurLong <- RurLong %>%
   mutate(newYear = as.numeric(newYear))
 
 GovGDP <- GovGDP %>%
-  left_join(RurLong, by = c("Country Name" = "Country Name", "doublingStart" = "newYear"))
+  left_join(RurLong, by = c("Country Name" = "Country Name", "doublingStart" = "newYear")) %>%
+  mutate(RuralPopulation = as.numeric(RuralPopulation))
 
 
 GovGDP[2,7] <- 1
