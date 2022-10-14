@@ -41,6 +41,8 @@ GDPLong <- GDPLong %>%
   mutate(Threshold = ifelse(GDPPerCapita >= 5000 & GDPPerCapita< 10000, "Upper-Mid Income", Threshold)) %>%
   mutate(Threshold = ifelse(GDPPerCapita >= 10000 & GDPPerCapita< 20000, "Developed", Threshold)) %>%
   mutate(Threshold = ifelse(GDPPerCapita >= 20000, "Wealthy", Threshold))
+
+GDPLong
 ```
 
 
@@ -268,8 +270,6 @@ finalgdp = finalgdp %>%
   mutate(doublingStart = minyear) %>% 
   mutate(doublingEnd = doublingStart + doublingTime) %>% 
   select(`Country Name`, Threshold, doublingStart, doublingEnd, doublingTime, status)
-
-
 ```
 
 
