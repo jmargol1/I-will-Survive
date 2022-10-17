@@ -614,6 +614,7 @@ LRGovTable %>%
 
 ```{r}
 testStat = 0.194 + 0.144
+testStat
 1 - pchisq( testStat , df=1 )
 ```
 
@@ -629,8 +630,25 @@ Not enough evidence to prove that democracies have different doubling times than
 Lower <- 0.8783274*exp( -1.96*sqrt( 1/36.7 + 1/49.3 ) )
 Upper <- 0.8783274*exp( 1.96*sqrt( 1/36.7 + 1/49.3) )
 
+
+
 Lower
 Upper
 ```
 Once again not enough evidence to say different doubling times
+
+```{r}
+`Test Statistic` <- 0.338
+`P-Value` <- 0.5609859
+`Hazard Ratio Point Estimate` <- 0.8783274
+`Hazard Ratio 95% Confidence Interval` <- "                [0.5728957-1.346596]"
+
+LogOutTab<- data.frame(`Test Statistic`, `P-Value`, `Hazard Ratio Point Estimate` <- 0.8783274, `Hazard Ratio 95% Confidence Interval` <- "[0.5728957-1.346596]")
+```
+
+```{r}
+LogOutTab %>%
+  kbl(caption = "Statistical Significance Output Statistics", col.names = c("Test Statistic","P-Value","Hazard Ratio Point Estimate","Hazard Ratio 95% Confidence Interval")) %>%
+  kable_classic_2()
+```
 
