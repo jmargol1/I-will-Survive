@@ -455,11 +455,11 @@ NoDemWeib = function(x) {
 
 curve(NoDemWeib, add = TRUE, col = "blue")
 
-rate = 1/3.100693
+rate = 1/exp(3.100693)
 
 NoDemExp = function(x) {
   
-  pweibull(x, rate)
+  pexp(x, rate = rate)
 }
 
 curve(NoDemExp, add = TRUE, col = "green")
@@ -498,11 +498,11 @@ DemWeib = function(x) {
 
 curve(DemWeib, add = TRUE, col = "blue")
 
-rate = 1/3.012705
+rate = 1/exp(3.012705)
 
 DemExp = function(x) {
   
-  pweibull(x, rate)
+  pexp(x, rate = rate)
 }
 
 curve(DemExp, add = TRUE, col = "green")
@@ -532,11 +532,11 @@ NoDemWeibCens = function(x) {
   1-pweibull(x, shape= shape, scale = scale)
 }
 
-rate = 1/3.862833 
+rate = 1/ exp(3.862833 )
 
 NoDemExpCens = function(x) {
   
-  1-pweibull(x, rate)
+  1-pexp(x, rate = rate)
 }
 
 plot(Govkm0, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Non-Democracies")
@@ -569,11 +569,11 @@ DemWeibCens = function(x) {
   1-pweibull(x, shape= shape, scale = scale)
 }
 
-rate = 1/3.790409
+rate = 1/exp(3.790409)
 
 DemExpCens = function(x) {
   
-  1-pweibull(x, rate)
+  1-pexp(x, rate = rate)
 }
 
 plot(Govkm1, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Democracies")
