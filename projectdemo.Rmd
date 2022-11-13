@@ -282,8 +282,6 @@ Energy <- Energy %>%
   cbind(newYear) %>%
   mutate(newYear = as.numeric(newYear))
 
-finalgdp <- finalgdp %>%
-  left_join(Energy, by=c("Country Name"="Country Name", "doublingStart" = "newYear" )) 
 ```
 
 
@@ -297,8 +295,6 @@ Education <- Education %>%
   cbind(newYear) %>%
   mutate(newYear = as.numeric(newYear))
 
-finalgdp <- finalgdp %>%
-  left_join(Education, by=c("Country Name"="Country Name", "doublingStart" = "newYear" )) 
 ```
 
 
@@ -428,6 +424,13 @@ GovGDP[182,7] <- 1
 GovGDP[191,7] <- 0
 GovGDP[192,7] <- 0
 GovGDP[47,51] <- 26.08
+
+GovGDP <- GovGDP %>%
+  left_join(Education, by=c("Country Name"="Country Name", "doublingStart" = "newYear" )) 
+
+
+GovGDP <- GovGDP %>%
+  left_join(Energy, by=c("Country Name"="Country Name", "doublingStart" = "newYear" )) 
 ```
 
 
