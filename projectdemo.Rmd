@@ -431,6 +431,18 @@ GovGDP <- GovGDP %>%
 
 GovGDP <- GovGDP %>%
   left_join(Energy, by=c("Country Name"="Country Name", "doublingStart" = "newYear" )) 
+
+
+GovGDP = GovGDP %>%
+  select(`Country Name`, Threshold, doublingStart, doublingEnd, doublingTime, status, regime_bmr_owid, region, Education, EnergyUse, RuralPopulation) %>%
+  mutate(Education = as.numeric(Education)) %>%
+  mutate(EnergyUse = as.numeric(EnergyUse))
+
+GovGDP[47,9] <- 99.8096
+
+
+GovGDP = GovGDP %>%
+  mutate(yearsSince1960 = doublingStart - 1960)
 ```
 
 
