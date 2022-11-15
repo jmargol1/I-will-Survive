@@ -272,6 +272,30 @@ finalgdp = finalgdp %>%
   select(`Country Name`, Threshold, doublingStart, doublingEnd, doublingTime, status)
 ```
 
+```{r}
+Energy <- read_csv("51cf3254-1f35-47a1-8263-2b455e7b6220_Data.csv")
+
+Energy <- Energy %>% pivot_longer(cols=c(`1960 [YR1960]`, `1961 [YR1961]`, `1962 [YR1962]`, `1963 [YR1963]`, `1964 [YR1964]`, `1965 [YR1965]`, `1966 [YR1966]`, `1967 [YR1967]`, `1968 [YR1968]`, `1969 [YR1969]`, `1970 [YR1970]`, `1971 [YR1971]`, `1972 [YR1972]`, `1973 [YR1973]`, `1974 [YR1974]`, `1975 [YR1975]`, `1976 [YR1976]`, `1977 [YR1977]`, `1978 [YR1978]`, `1979 [YR1979]`, `1980 [YR1980]`, `1981 [YR1981]`, `1982 [YR1982]`, `1983 [YR1983]`, `1984 [YR1984]`, `1985 [YR1985]`, `1986 [YR1986]`, `1987 [YR1987]`, `1988 [YR1988]`, `1989 [YR1989]`, `1990 [YR1990]`, `1991 [YR1991]`, `1992 [YR1992]`, `1993 [YR1993]`, `1994 [YR1994]`, `1995 [YR1995]`, `1996 [YR1996]`, `1997 [YR1997]`, `1998 [YR1998]`, `1999 [YR1999]`, `2000 [YR2000]`, `2001 [YR2001]`, `2002 [YR2002]`, `2003 [YR2003]`, `2004 [YR2004]`, `2005 [YR2005]`, `2006 [YR2006]`, `2007 [YR2007]`, `2008 [YR2008]`, `2009 [YR2009]`, `2010 [YR2010]`, `2011 [YR2011]`, `2012 [YR2012]`, `2013 [YR2013]`, `2014 [YR2014]`, `2015 [YR2015]`, `2016 [YR2016]`, `2017 [YR2017]`, `2018 [YR2018]`, `2019 [YR2019]`, `2020 [YR2020]`, `2021 [YR2021]`),names_to="Year",values_to="EnergyUse")
+
+newYear <- substr(Energy$Year, 1, 4)  
+Energy <- Energy %>%
+  cbind(newYear) %>%
+  mutate(newYear = as.numeric(newYear))
+
+```
+
+
+```{r}
+Education <- read_csv("bd98d393-6094-409c-9546-d008e2dfa3ce_Data.csv")
+
+Education <- Education %>% pivot_longer(cols=c(`1960 [YR1960]`, `1961 [YR1961]`, `1962 [YR1962]`, `1963 [YR1963]`, `1964 [YR1964]`, `1965 [YR1965]`, `1966 [YR1966]`, `1967 [YR1967]`, `1968 [YR1968]`, `1969 [YR1969]`, `1970 [YR1970]`, `1971 [YR1971]`, `1972 [YR1972]`, `1973 [YR1973]`, `1974 [YR1974]`, `1975 [YR1975]`, `1976 [YR1976]`, `1977 [YR1977]`, `1978 [YR1978]`, `1979 [YR1979]`, `1980 [YR1980]`, `1981 [YR1981]`, `1982 [YR1982]`, `1983 [YR1983]`, `1984 [YR1984]`, `1985 [YR1985]`, `1986 [YR1986]`, `1987 [YR1987]`, `1988 [YR1988]`, `1989 [YR1989]`, `1990 [YR1990]`, `1991 [YR1991]`, `1992 [YR1992]`, `1993 [YR1993]`, `1994 [YR1994]`, `1995 [YR1995]`, `1996 [YR1996]`, `1997 [YR1997]`, `1998 [YR1998]`, `1999 [YR1999]`, `2000 [YR2000]`, `2001 [YR2001]`, `2002 [YR2002]`, `2003 [YR2003]`, `2004 [YR2004]`, `2005 [YR2005]`, `2006 [YR2006]`, `2007 [YR2007]`, `2008 [YR2008]`, `2009 [YR2009]`, `2010 [YR2010]`, `2011 [YR2011]`, `2012 [YR2012]`, `2013 [YR2013]`, `2014 [YR2014]`, `2015 [YR2015]`, `2016 [YR2016]`, `2017 [YR2017]`, `2018 [YR2018]`, `2019 [YR2019]`, `2020 [YR2020]`, `2021 [YR2021]`),names_to="Year",values_to="Education")
+
+newYear <- substr(Education$Year, 1, 4)  
+Education <- Education %>%
+  cbind(newYear) %>%
+  mutate(newYear = as.numeric(newYear))
+
+```
 
 
 
@@ -400,6 +424,52 @@ GovGDP[182,7] <- 1
 GovGDP[191,7] <- 0
 GovGDP[192,7] <- 0
 GovGDP[47,51] <- 26.08
+
+GovGDP <- GovGDP %>%
+  left_join(Education, by=c("Country Name"="Country Name", "doublingStart" = "newYear" )) 
+
+
+GovGDP <- GovGDP %>%
+  left_join(Energy, by=c("Country Name"="Country Name", "doublingStart" = "newYear" )) 
+
+
+GovGDP = GovGDP %>%
+  select(`Country Name`, Threshold, doublingStart, doublingEnd, doublingTime, status, regime_bmr_owid, region, Education, EnergyUse, RuralPopulation) %>%
+  mutate(Education = as.numeric(Education)) %>%
+  mutate(EnergyUse = as.numeric(EnergyUse))
+
+GovGDP[47,9] <- 99.8096
+
+
+GovGDP = GovGDP %>%
+  mutate(yearsSince1960 = doublingStart - 1960)
+
+
+SecondaryEd <- read_csv("SchoolEnrollment.csv")
+
+SecEdLong <- SecondaryEd %>%
+  pivot_longer(cols=c(`1960 [YR1960]`, `1961 [YR1961]`, `1962 [YR1962]`, `1963 [YR1963]`, `1964 [YR1964]`, `1965 [YR1965]`, `1966 [YR1966]`, `1967 [YR1967]`, `1968 [YR1968]`, `1969 [YR1969]`, `1970 [YR1970]`, `1971 [YR1971]`, `1972 [YR1972]`, `1973 [YR1973]`, `1974 [YR1974]`, `1975 [YR1975]`, `1976 [YR1976]`, `1977 [YR1977]`, `1978 [YR1978]`, `1979 [YR1979]`, `1980 [YR1980]`, `1981 [YR1981]`, `1982 [YR1982]`, `1983 [YR1983]`, `1984 [YR1984]`, `1985 [YR1985]`, `1986 [YR1986]`, `1987 [YR1987]`, `1988 [YR1988]`, `1989 [YR1989]`, `1990 [YR1990]`, `1991 [YR1991]`, `1992 [YR1992]`, `1993 [YR1993]`, `1994 [YR1994]`, `1995 [YR1995]`, `1996 [YR1996]`, `1997 [YR1997]`, `1998 [YR1998]`, `1999 [YR1999]`, `2000 [YR2000]`, `2001 [YR2001]`, `2002 [YR2002]`, `2003 [YR2003]`, `2004 [YR2004]`, `2005 [YR2005]`, `2006 [YR2006]`, `2007 [YR2007]`, `2008 [YR2008]`, `2009 [YR2009]`, `2010 [YR2010]`, `2011 [YR2011]`, `2012 [YR2012]`, `2013 [YR2013]`, `2014 [YR2014]`, `2015 [YR2015]`, `2016 [YR2016]`, `2017 [YR2017]`, `2018 [YR2018]`, `2019 [YR2019]`, `2020 [YR2020]`, `2021 [YR2021]`),names_to="Year",values_to="SecondaryEnrollment") %>%
+  filter(SecondaryEnrollment != "..")
+
+newYear <- substr(SecEdLong$Year, 1, 4)  
+SecEdLong <- SecEdLong %>%
+  cbind(newYear) %>%
+  mutate(newYear = as.numeric(newYear))
+
+GovGDP <- GovGDP %>%
+  left_join(SecEdLong, by = c("Country Name" = "Country Name", "doublingStart" = "newYear")) %>%
+  mutate(SecondaryEnrollment = as.numeric(SecondaryEnrollment))
+
+GovGDP <- GovGDP %>%
+  select(-`Country Code`, -`Series Name`, - Year, - `Series Code`)
+
+
+
+```
+```{r}
+GovGDP %>%
+  group_by(SecondaryEnrollment) %>%
+  summarise(t = n())
 ```
 
 
@@ -455,11 +525,11 @@ NoDemWeib = function(x) {
 
 curve(NoDemWeib, add = TRUE, col = "blue")
 
-rate = 1/3.100693
+rate = 1/exp(3.100693)
 
 NoDemExp = function(x) {
   
-  pweibull(x, rate)
+  pexp(x, rate = rate)
 }
 
 curve(NoDemExp, add = TRUE, col = "green")
@@ -498,11 +568,11 @@ DemWeib = function(x) {
 
 curve(DemWeib, add = TRUE, col = "blue")
 
-rate = 1/3.012705
+rate = 1/exp(3.012705)
 
 DemExp = function(x) {
   
-  pweibull(x, rate)
+  pexp(x, rate = rate)
 }
 
 curve(DemExp, add = TRUE, col = "green")
@@ -532,11 +602,11 @@ NoDemWeibCens = function(x) {
   1-pweibull(x, shape= shape, scale = scale)
 }
 
-rate = 1/3.862833 
+rate = 1/ exp(3.862833 )
 
 NoDemExpCens = function(x) {
   
-  1-pweibull(x, rate)
+  1-pexp(x, rate = rate)
 }
 
 plot(Govkm0, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Non-Democracies")
@@ -569,11 +639,11 @@ DemWeibCens = function(x) {
   1-pweibull(x, shape= shape, scale = scale)
 }
 
-rate = 1/3.790409
+rate = 1/exp(3.790409)
 
 DemExpCens = function(x) {
   
-  1-pweibull(x, rate)
+  1-pexp(x, rate = rate)
 }
 
 plot(Govkm1, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Democracies")
@@ -590,6 +660,14 @@ curve(NoDemWeibCens, add = TRUE, col = "green")
 curve(DemWeibCens, add = TRUE, col = "blue")
 legend(1,0.3,c("Non-Democracy Kaplan-Meier","Democracy Kaplan-Meier", "Non-Democracy Weibull", "Democracy Weibull"),col=c("black","red", "green", "blue") , text.col=c("black","red", "green", "blue") , lty=1 , cex=0.8 )
 ```
+## Adding Covariates
+
+```{r}
+survreg( Surv(doublingTime, status) ~ factor(regime_bmr_owid) +  EnergyUse + Threshold + yearsSince1960 + SecondaryEnrollment, data = GovGDP, dist = "gaussian")
+survreg( Surv(doublingTime, status) ~ factor(regime_bmr_owid) + EnergyUse + Threshold + yearsSince1960 + SecondaryEnrollment, data = GovGDP, dist = "weibull")
+survreg( Surv(doublingTime, status) ~ factor(regime_bmr_owid) + EnergyUse + Threshold + yearsSince1960 + SecondaryEnrollment, data = GovGDP, dist = "exponential")
+```
+
 
 ## Log Rank Test Democracy vs. Non-Democracy
 
@@ -614,6 +692,7 @@ LRGovTable %>%
 
 ```{r}
 testStat = 0.194 + 0.144
+testStat
 1 - pchisq( testStat , df=1 )
 ```
 
@@ -629,187 +708,25 @@ Not enough evidence to prove that democracies have different doubling times than
 Lower <- 0.8783274*exp( -1.96*sqrt( 1/36.7 + 1/49.3 ) )
 Upper <- 0.8783274*exp( 1.96*sqrt( 1/36.7 + 1/49.3) )
 
+
+
 Lower
 Upper
 ```
 Once again not enough evidence to say different doubling times
 
-
-# Rural Dataset
-
-## Rural KM 
 ```{r}
-sorted.pop = sort(GovGDP$RuralPopulation)
-quart = length(GovGDP$Threshold) * .25
+`Test Statistic` <- 0.338
+`P-Value` <- 0.5609859
+`Hazard Ratio Point Estimate` <- 0.8783274
+`Hazard Ratio 95% Confidence Interval` <- "                [0.5728957-1.346596]"
 
-
-for (i in 1:3) {
-  print(sorted.pop[quart * i])
-}
-
-
-library(survminer)
-
-
-GovGDP = GovGDP %>% mutate( RuralPopulationCat = cut(RuralPopulation , c(0, 30.61, 44.229, 57.739, 100), labels = c("First Quartile", "Second Quartile", "Third Quartile", "Fourth Quartile"))  )
-
-
-ruralkm = survfit( Surv(doublingTime, (status)) ~ RuralPopulationCat , conf.type = 'plain',  data = GovGDP  )
-
-plot(ruralkm, col = c("blue", "red", "black", "green"))
-
-ggsurvplot( ruralkm ,
-            data=GovGDP ,
-            legend.title="Pefcentage of Rural Pop",
-            legend.labs=c("[0, 30.61]","(30.61, 44.229]", "(44.229, 57.739]", "(57.739, 100]")
-            )
-
-summary(ruralkm)
+LogOutTab<- data.frame(`Test Statistic`, `P-Value`, `Hazard Ratio Point Estimate` <- 0.8783274, `Hazard Ratio 95% Confidence Interval` <- "[0.5728957-1.346596]")
 ```
-30 year point estimate:
-first quartile:
-.631 [0.4478, 0.813]
 
-second quartile:
-0.404 [0.21241, 0.595]
-
-third quartile:
-0.418 {0.243, 0.594}
-  
-fourth quartile:
- 0.452  [0.29039, 0.613]
- 
 ```{r}
-survdiff( Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP )
-
-`Quartile Status` <- c("[0, 30.61]","(30.61, 44.229]", "(44.229, 57.739]", "(57.739, 100]")
-`Number of Countries` <- c(44,48, 48, 48)
-`Observed Doubling Times` <- c(18,22,22,26)
-`Expected Doubling Times` <- c(22,17.6,21.6,26.8)
-`(O-E)^2/E` <- c(.71261, 1.08878, 0.00636, 0.02361)
-`(O-E)^2/V` <- c(0.98553, 1.42192, 0.00871, 0.03562)
-
-LRGovTable <- data.frame(`Quartile Status`,`Number of Countries`, `Observed Doubling Times`, `Expected Doubling Times`, `(O-E)^2/E`, `(O-E)^2/V` )
-
-LRGovTable %>%
-  kbl(caption = "Log Rank Table Comparing GDP Doubling Times for Democracies and Non-Democracies", col.names = c("Democracy Status","Number of Countries","Observed GDP Doubling Time","Expected GDP Doubling Time", "(O-E)^2/E", "(O-E)^2/V")) %>%
+LogOutTab %>%
+  kbl(caption = "Statistical Significance Output Statistics", col.names = c("Test Statistic","P-Value","Hazard Ratio Point Estimate","Hazard Ratio 95% Confidence Interval")) %>%
   kable_classic_2()
-```
-
-
-```{r}
-0.71261 + 1.08878 + 0.00636 + 0.02361
-
-1 - pchisq(1.83136, 3)
-```
-
-
-
-
-## Rural Parametric
-
-```{r}
-survreg(Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP, dist = "gaussian")
-
-norm.0 = function(x) {
-  return(1 - pnorm(x, mean = 34.451465, sd = 16.47092 ))
-}
-
-norm.1 = function(x) {
-  return(1 - pnorm(x, mean = 34.451465 - 5.585870, sd = 16.47092 ))
-}
-
-norm.2 = function(x) {
-  return(1 - pnorm(x, mean = 34.451465 - 3.645804, sd = 16.47092 ))
-}
-
-norm.3 = function(x) {
-  return(1 - pnorm(x, mean = 34.451465 - 1.798188 , sd = 16.47092 ))
-}
-```
-
-
-
-```{r}
- survreg(Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP, dist = "weibull")
-
-weib.0 = function(x) {
-  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838)))
-}
-
-weib.1 = function(x) {
-  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838-0.24424897)))
-}
-
-weib.2 = function(x) {
-  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838-0.09063327 )))
-}
-
-weib.3 = function(x) {
-  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838-0.03270807  )))
-}
-```
-
-
-```{r}
-survreg(Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP, dist = "exponential")
-
-exp.0 = function(x) {
-  return(1 - pexp(x, 1 / ( 3.9838267  )))
-}
-
-exp.1 = function(x) {
-  return(1 - pexp(x, 1 / ( 3.9838267 - 0.3040798 )))
-}
-
-exp.2 = function(x) {
-  return(1 - pexp(x, 1 / ( 3.9838267 - 0.1502568  )))
-}
-
-exp.3 = function(x) {
-  return(1 - pexp(x, 1 / ( 3.9838267 - 0.1814469  )))
-}
-```
-
-```{r}
-
-km.0 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "First Quartile"))
-
-km.1 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "Second Quartile"))
-
-km.2 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "Third Quartile"))
-
-km.3 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "Fourth Quartile"))
-```
-
-
-
-```{r}
-par(mfrow = c(2,2), 
-    mar = c(0,0,2,1))
-
-plot(km.0, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "First Quartile")
-curve(norm.0, add = TRUE, col = "red")
-curve(weib.0, add = TRUE, col = "blue")
-curve(exp.0, add = TRUE, col = "green")
-legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
-
-plot(km.1, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Second Quartile")
-curve(norm.1, add = TRUE, col = "red")
-curve(weib.1, add = TRUE, col = "blue")
-curve(exp.1, add = TRUE, col = "green")
-legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
-
-plot(km.2, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Third Quartile")
-curve(norm.2, add = TRUE, col = "red")
-curve(weib.2, add = TRUE, col = "blue")
-curve(exp.2, add = TRUE, col = "green")
-legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
-
-plot(km.3, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Fourth Quartile")
-curve(norm.3, add = TRUE, col = "red")
-curve(weib.3, add = TRUE, col = "blue")
-curve(exp.3, add = TRUE, col = "green")
-legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
 ```
 
