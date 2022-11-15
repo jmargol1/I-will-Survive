@@ -634,3 +634,182 @@ Upper
 ```
 Once again not enough evidence to say different doubling times
 
+
+# Rural Dataset
+
+## Rural KM 
+```{r}
+sorted.pop = sort(GovGDP$RuralPopulation)
+quart = length(GovGDP$Threshold) * .25
+
+
+for (i in 1:3) {
+  print(sorted.pop[quart * i])
+}
+
+
+library(survminer)
+
+
+GovGDP = GovGDP %>% mutate( RuralPopulationCat = cut(RuralPopulation , c(0, 30.61, 44.229, 57.739, 100), labels = c("First Quartile", "Second Quartile", "Third Quartile", "Fourth Quartile"))  )
+
+
+ruralkm = survfit( Surv(doublingTime, (status)) ~ RuralPopulationCat , conf.type = 'plain',  data = GovGDP  )
+
+plot(ruralkm, col = c("blue", "red", "black", "green"))
+
+ggsurvplot( ruralkm ,
+            data=GovGDP ,
+            legend.title="Pefcentage of Rural Pop",
+            legend.labs=c("[0, 30.61]","(30.61, 44.229]", "(44.229, 57.739]", "(57.739, 100]")
+            )
+
+summary(ruralkm)
+```
+30 year point estimate:
+first quartile:
+.631 [0.4478, 0.813]
+
+second quartile:
+0.404 [0.21241, 0.595]
+
+third quartile:
+0.418 {0.243, 0.594}
+  
+fourth quartile:
+ 0.452  [0.29039, 0.613]
+ 
+```{r}
+survdiff( Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP )
+
+`Quartile Status` <- c("[0, 30.61]","(30.61, 44.229]", "(44.229, 57.739]", "(57.739, 100]")
+`Number of Countries` <- c(44,48, 48, 48)
+`Observed Doubling Times` <- c(18,22,22,26)
+`Expected Doubling Times` <- c(22,17.6,21.6,26.8)
+`(O-E)^2/E` <- c(.71261, 1.08878, 0.00636, 0.02361)
+`(O-E)^2/V` <- c(0.98553, 1.42192, 0.00871, 0.03562)
+
+LRGovTable <- data.frame(`Quartile Status`,`Number of Countries`, `Observed Doubling Times`, `Expected Doubling Times`, `(O-E)^2/E`, `(O-E)^2/V` )
+
+LRGovTable %>%
+  kbl(caption = "Log Rank Table Comparing GDP Doubling Times for Democracies and Non-Democracies", col.names = c("Democracy Status","Number of Countries","Observed GDP Doubling Time","Expected GDP Doubling Time", "(O-E)^2/E", "(O-E)^2/V")) %>%
+  kable_classic_2()
+```
+
+
+```{r}
+0.71261 + 1.08878 + 0.00636 + 0.02361
+
+1 - pchisq(1.83136, 3)
+```
+
+
+
+
+## Rural Parametric
+
+```{r}
+survreg(Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP, dist = "gaussian")
+
+norm.0 = function(x) {
+  return(1 - pnorm(x, mean = 34.451465, sd = 16.47092 ))
+}
+
+norm.1 = function(x) {
+  return(1 - pnorm(x, mean = 34.451465 - 5.585870, sd = 16.47092 ))
+}
+
+norm.2 = function(x) {
+  return(1 - pnorm(x, mean = 34.451465 - 3.645804, sd = 16.47092 ))
+}
+
+norm.3 = function(x) {
+  return(1 - pnorm(x, mean = 34.451465 - 1.798188 , sd = 16.47092 ))
+}
+```
+
+
+
+```{r}
+ survreg(Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP, dist = "weibull")
+
+weib.0 = function(x) {
+  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838)))
+}
+
+weib.1 = function(x) {
+  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838-0.24424897)))
+}
+
+weib.2 = function(x) {
+  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838-0.09063327 )))
+}
+
+weib.3 = function(x) {
+  return(1 - pweibull(x, 1 / 0.5648869, exp(3.71324838-0.03270807  )))
+}
+```
+
+
+```{r}
+survreg(Surv(doublingTime, (status)) ~ RuralPopulationCat, data = GovGDP, dist = "exponential")
+
+exp.0 = function(x) {
+  return(1 - pexp(x, 1 / ( 3.9838267  )))
+}
+
+exp.1 = function(x) {
+  return(1 - pexp(x, 1 / ( 3.9838267 - 0.3040798 )))
+}
+
+exp.2 = function(x) {
+  return(1 - pexp(x, 1 / ( 3.9838267 - 0.1502568  )))
+}
+
+exp.3 = function(x) {
+  return(1 - pexp(x, 1 / ( 3.9838267 - 0.1814469  )))
+}
+```
+
+```{r}
+
+km.0 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "First Quartile"))
+
+km.1 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "Second Quartile"))
+
+km.2 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "Third Quartile"))
+
+km.3 = survfit( Surv(doublingTime, (status)) ~ 1 , conf.type = 'plain',  data = GovGDP %>% filter(RuralPopulationCat == "Fourth Quartile"))
+```
+
+
+
+```{r}
+par(mfrow = c(2,2), 
+    mar = c(0,0,2,1))
+
+plot(km.0, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "First Quartile")
+curve(norm.0, add = TRUE, col = "red")
+curve(weib.0, add = TRUE, col = "blue")
+curve(exp.0, add = TRUE, col = "green")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+
+plot(km.1, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Second Quartile")
+curve(norm.1, add = TRUE, col = "red")
+curve(weib.1, add = TRUE, col = "blue")
+curve(exp.1, add = TRUE, col = "green")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+
+plot(km.2, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Third Quartile")
+curve(norm.2, add = TRUE, col = "red")
+curve(weib.2, add = TRUE, col = "blue")
+curve(exp.2, add = TRUE, col = "green")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+
+plot(km.3, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Fourth Quartile")
+curve(norm.3, add = TRUE, col = "red")
+curve(weib.3, add = TRUE, col = "blue")
+curve(exp.3, add = TRUE, col = "green")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+```
+
