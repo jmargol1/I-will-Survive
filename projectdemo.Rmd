@@ -730,3 +730,7 @@ LogOutTab %>%
   kable_classic_2()
 ```
 
+```{r}
+save(GovGDP, file = "GovGDP.csv")
+```
+
