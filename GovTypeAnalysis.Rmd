@@ -1,0 +1,27 @@
+---
+title: "Government Type Analysis"
+author: "Joe Margolis"
+date: '2022-11-16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(survival)
+library(readr)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(ggmap)
+library(dplyr)
+library(rvest)
+library(stringr)
+library(kableExtra)
+```
+
+```{r}
+GovGDP <- read_csv("GovGDP.csv")
+```
+
+
