@@ -21,7 +21,348 @@ library(kableExtra)
 ```
 
 ```{r}
-GovGDP <- read_csv("GovGDP.csv")
+load("GovGDP.csv")
 ```
 
+```{r}
+Gov0 <- GovGDP %>%
+  filter(regime_bmr_owid == 0 | regime_bmr_owid == 4)
+Gov1 <- GovGDP %>%
+  filter(regime_bmr_owid == 1 | regime_bmr_owid ==3)
+```
+
+```{r}
+Govkm0 = survfit( Surv(doublingTime, (status)) ~ 1, conf.type = 'plain',  data = Gov0  )
+Govkm1 = survfit( Surv(doublingTime, (status)) ~ 1, conf.type = 'plain', data = Gov1   )
+
+plot(Govkm0, conf.int = TRUE, xlab = "Years", ylab = "GDP Doubling Time Probability", main = "GDP Doubling Times of Democracies vs. Non-Democracies")
+lines(Govkm1, conf.int = TRUE, col = "red")
+legend(1,0.2,c("Non-Democracy","Democracy"),col=c("black","red") , text.col=c("black","red") , lty=1 , cex=0.8 )
+```
+
+## Non-Democracy Model Fitting
+
+```{r}
+NDNorm <- survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "gaussian"   )
+NDWeib <- survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "weibull"   )
+NDExp <- survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "exponential"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "lognormal"   )
+
+summary(NDWeib)
+```
+
+```{r}
+
+mean = 34.45879 
+sd = 22.15558   
+
+NoDemNorm = function(x) {
+  
+  1-pnorm(x, mean = mean, sd = sd)
+}
+
+plot(Govkm0, conf.int = FALSE)
+
+curve(NoDemNorm, add = TRUE, col = "red")
+
+
+scale = exp(3.78953)
+shape = 1/ 0.8044466
+
+NoDemWeib = function(x) {
+  
+  1-pweibull(x, shape= shape, scale = scale)
+}
+
+curve(NoDemWeib, add = TRUE, col = "blue")
+
+rate = 1/exp(3.888212)
+
+NoDemExp = function(x) {
+  
+  1-pexp(x, rate = rate)
+}
+
+curve(NoDemExp, add = TRUE, col = "green")
+
+mean = 3.436134 
+sd = 1.066429    
+
+NoDemLN = function(x) {
+  
+  1-plnorm(x, mean = mean, sd = sd)
+}
+
+curve(NoDemLN, add = TRUE, col = "purple")
+```
+Cox Snells For Each
+
+```{r}
+CoxSnell = function(cs,status,xlim=NULL,ylim=NULL)
+{
+kmcs = survfit( Surv(jitter(cs,amount=(max(cs)-min(cs))/1000),status) ~ 1 )$surv
+
+plot( log(-log(kmcs)) ~ sort(log(cs)) ,
+      xlab="log(Cox-Snell)", ylab="log(-log(S(Cox-Snell)))", xlim=xlim, ylim=ylim )
+
+abline(0,1,col='red')
+}
+```
+
+Exponential Cox Snell
+
+```{r}
+CSExp <- -log( 1 - pexp( Gov0$doublingTime , 1/exp(3.888212) ) )
+
+CoxSnell( CSExp , Gov0$status )
+```
+
+
+Weibull Cox Snell
+
+```{r}
+CSWeib <- -log( 1 - pweibull( Gov0$doublingTime , 1/0.8044466, exp(3.78953) ) )
+
+CoxSnell( CSWeib , Gov0$status )
+```
+Log-Normal Cox Snell
+
+```{r}
+CSLN <- -log( 1 - plnorm( Gov0$doublingTime , 3.436134, 1.066429 ) )
+
+CoxSnell( CSLN , Gov0$status )
+```
+
+```{r}
+CSNorm <- -log( 1 - pnorm( Gov0$doublingTime , 34.45879 , 22.15558 ) )
+
+CoxSnell( CSNorm , Gov0$status )
+```
+
+```{r}
+CSExp <- -log( 1 - pexp( Gov0$doublingTime ,1/exp(3.888212) ) )
+
+CoxSnell( CSExp , Gov0$status )
+```
+
+#### LRT Between exponential and weibull
+
+```{r}
+NDExp$loglik
+NDWeib$loglik
+```
+
+
+Log Normal testing
+
+```{r}
+m1 <- survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "lognormal"   )
+m2 <- survreg( Surv(doublingTime, status) ~ Threshold, data = Gov0, dist = "lognormal"   )
+
+m1$loglik
+m2$loglik
+
+testStat <- (2*-158.6001) - (2*-162.1257)
+1-pchisq(testStat, 1)
+```
+
+Threshold is also statistically significant 
+
+```{r}
+m3 <- survreg( Surv(doublingTime, status) ~ Threshold + yearsSince1960, data = Gov0, dist = "lognormal"   )
+
+m2$loglik
+m3$loglik
+
+testStat <- (2*-158.0051) - (2*-158.6001)
+1-pchisq(testStat, 1)
+```
+
+Years since 1960 not statistically significant
+
+```{r}
+m4 <- survreg( Surv(doublingTime, status) ~ Threshold + EnergyUse, data = Gov0, dist = "lognormal"   )
+
+m2$loglik
+m4$loglik
+
+testStat <- (2*-111.6340) - (2*-158.6001)
+1-pchisq(testStat, 1)
+```
+
+Energy use is statistically significant
+
+```{r}
+m5 <- survreg( Surv(doublingTime, status) ~ Threshold + EnergyUse + SecondaryEnrollment, data = Gov0, dist = "lognormal"   )
+```
+
+```{r}
+m4$loglik
+m5$loglik
+
+testStat <- (2*-63.68472) - (2*-111.6340)
+1-pchisq(testStat, 1)
+```
+Secondary school enrollment is statistically significant
+
+```{r}
+summary(m5)
+```
+
+
+## Democracy Fitting
+
+```{r}
+survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "gaussian"   )
+survreg( Surv(doublingTime,status) ~ 1, data = Gov1, dist = "weibull"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "exponential"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "lognormal"   )
+```
+
+```{r}
+
+mean = 29.80413 
+sd = 13.1161   
+
+DemNorm = function(x) {
+  
+  1-pnorm(x, mean = mean, sd = sd)
+}
+
+plot(Govkm1)
+
+curve(DemNorm, add = TRUE, col = "red")
+
+
+scale = exp(3.535108)
+shape = 1/ 0.441614
+
+DemWeib = function(x) {
+  
+  1-pweibull(x, shape= shape, scale = scale)
+}
+
+curve(DemWeib, add = TRUE, col = "blue")
+
+rate = 1/exp(3.773645)
+
+DemExp = function(x) {
+  
+  1-pexp(x, rate = rate)
+}
+
+curve(DemExp, add = TRUE, col = "green")
+
+mean = 3.306469 
+sd = 0.552448    
+
+DemLN = function(x) {
+  
+  1-plnorm(x, mean = mean, sd = sd)
+}
+
+curve(DemLN, add = TRUE, col = "purple")
+```
+
+Exponential Dem Cox Snell
+
+```{r}
+CSExp <- -log( 1 - pexp( Gov1$doublingTime , 1/exp(3.773645) ) )
+
+CoxSnell( CSExp , Gov1$status )
+```
+
+Weibull Dem Cox Snell
+
+```{r}
+CSWeib <- -log( 1 - pweibull( Gov1$doublingTime , 1/0.441614, exp(3.535108) ) )
+
+CoxSnell( CSWeib , Gov1$status )
+```
+
+Dem Normal CS
+
+```{r}
+CSNorm <- -log( 1 - pnorm( Gov1$doublingTime , 29.80413 , 13.1161) )
+
+CoxSnell( CSNorm , Gov1$status )
+```
+
+Dem Log Normal CS
+
+```{r}
+CSLN <- -log( 1 - plnorm( Gov1$doublingTime , 3.306469, 0.552448) )
+
+CoxSnell( CSLN , Gov1$status )
+```
+
+#### Log Normal Covariates Testing Democracy
+
+```{r}
+m1 <- survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "lognormal"   )
+m2 <- survreg( Surv(doublingTime, status) ~ Threshold, data = Gov1, dist = "lognormal"   )
+
+m1$loglik
+m2$loglik
+
+testStat <- (2*-218.3843) - (2*-222.8125)
+1-pchisq(testStat, 1)
+```
+
+Threshold has statistical significance
+
+```{r}
+m3 <- survreg( Surv(doublingTime, status) ~ Threshold + yearsSince1960, data = Gov1, dist = "lognormal"   )
+
+m2$loglik
+m3$loglik
+
+testStat <- (2*-218.1054) - (2*-218.3843)
+1-pchisq(testStat, 1)
+```
+years since 1960 does not add statistical significance
+
+```{r}
+m4 <- survreg( Surv(doublingTime, status) ~ Threshold + EnergyUse, data = Gov1, dist = "lognormal"   )
+
+m2$loglik
+m4$loglik
+
+testStat <- (2*-149.7570) - (2*-218.3843)
+1-pchisq(testStat, 1)
+```
+
+Including Energy Use also has statistical significance
+
+```{r}
+m5 <- survreg( Surv(doublingTime, status) ~ Threshold + EnergyUse + SecondaryEnrollment, data = Gov1, dist = "lognormal"   )
+```
+
+```{r}
+m4$loglik
+m5$loglik
+
+testStat <- (2*-96.69909) - (2*-149.7570)
+1-pchisq(testStat, 1)
+```
+Secondary school enrollment is statistically significant
+
+```{r}
+summary(m5)
+```
+```{r}
+AllMod <- survreg( Surv(doublingTime, status) ~ factor(regime_bmr_owid) + EnergyUse + SecondaryEnrollment, data = GovGDP, dist = "lognormal"   )
+
+AllMod
+
+HDem <- function(x) dlnorm(x,4.281254e+00-2.700882e-01 + (0.0001587215 * mean(GovGDP$EnergyUse)) - (0.0081907981 * mean(GovGDP$SecondaryEnrollment)),  0.395  )/(1-plnorm(x,4.281254e+00-2.700882e-01 + (0.0001587215 * mean(GovGDP$EnergyUse)) - (0.0081907981 * mean(GovGDP$SecondaryEnrollment)),  0.395 ))
+
+
+HNoDem <- function(x) dlnorm(x,4.281254e+00 + (0.0001587215 * mean(GovGDP$EnergyUse)) - (0.0081907981 * mean(GovGDP$SecondaryEnrollment)),  0.395  )/(1-plnorm(x,4.281254e+00 + (0.0001587215 * mean(GovGDP$EnergyUse)) - (0.0081907981 * mean(GovGDP$SecondaryEnrollment)),  0.395 ))
+```
+```{r}
+curve( HDem , ylim = c(0,1), ylab="Hazard" )
+
+curve( HNoDem , add=TRUE , lty=2 )
+```
 
