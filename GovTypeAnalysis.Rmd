@@ -35,8 +35,8 @@ Gov1 <- GovGDP %>%
 Govkm0 = survfit( Surv(doublingTime, (status)) ~ 1, conf.type = 'plain',  data = Gov0  )
 Govkm1 = survfit( Surv(doublingTime, (status)) ~ 1, conf.type = 'plain', data = Gov1   )
 
-plot(Govkm0, conf.int = TRUE, xlab = "Years", ylab = "GDP Doubling Time Probability", main = "GDP Doubling Times of Democracies vs. Non-Democracies")
-lines(Govkm1, conf.int = TRUE, col = "red")
+plot(Govkm0, conf.int = FALSE, xlab = "Years", ylab = "GDP Doubling Time Probability", main = "GDP Doubling Times of Democracies vs. Non-Democracies")
+lines(Govkm1, conf.int = FALSE, col = "red")
 legend(1,0.2,c("Non-Democracy","Democracy"),col=c("black","red") , text.col=c("black","red") , lty=1 , cex=0.8 )
 ```
 
@@ -364,5 +364,13 @@ HNoDem <- function(x) dlnorm(x,4.281254e+00 + (0.0001587215 * mean(GovGDP$Energy
 curve( HDem , ylim = c(0,1), ylab="Hazard" )
 
 curve( HNoDem , add=TRUE , lty=2 )
+```
+
+### Doig Covariates on full model
+
+```{r}
+m1 <- survreg( Surv(doublingTime, status) ~ factor(regime_bmr_owid) , data = GovGDP, dist = "lognormal"   )
+
+summary(m1)
 ```
 
