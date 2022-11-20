@@ -374,3 +374,31 @@ m1 <- survreg( Surv(doublingTime, status) ~ factor(regime_bmr_owid) , data = Gov
 summary(m1)
 ```
 
+### Using Democracy vs. Non Democracy as a Time Variables
+
+```{r}
+coxMod <- coxph(Surv(doublingTime, status) ~ factor(regime_bmr_owid) , data = GovGDP)
+coxMod
+schoen <- cox.zph(coxMod)
+plot(schoen)
+abline(a= 0.1361, b = 0, add=TRUE, col = "red")
+abline(a= 0, b = 0, add=TRUE, col = "green")
+abline(a= 0.1361, b = 0, add=TRUE, col = "red")
+
+p <- locator()
+abline(v=p$x, lty=3)
+
+```
+```{r}
+coxMod <- coxph(Surv(doublingTime, status) ~ factor(regime_bmr_owid) + strata(Threshold) , data = GovGDP)
+coxMod
+schoen <- cox.zph(coxMod)
+plot(schoen)
+abline(a= 0.2913, b = 0, add=TRUE, col = "red")
+abline(a= 0, b = 0, add=TRUE, col = "green")
+
+p <- locator()
+abline(v=p$x, lty=3)
+```
+
+
