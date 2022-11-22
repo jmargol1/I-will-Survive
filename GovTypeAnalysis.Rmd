@@ -98,12 +98,22 @@ curve(NoDemLN, add = TRUE, col = "purple")
 Cox Snells For Each
 
 ```{r}
-CoxSnell = function(cs,status,xlim=NULL,ylim=NULL)
+CoxSnellWeib = function(cs,status,xlim=NULL,ylim=NULL)
 {
 kmcs = survfit( Surv(jitter(cs,amount=(max(cs)-min(cs))/1000),status) ~ 1 )$surv
 
 plot( log(-log(kmcs)) ~ sort(log(cs)) ,
-      xlab="log(Cox-Snell)", ylab="log(-log(S(Cox-Snell)))", xlim=xlim, ylim=ylim )
+      xlab="log(Cox-Snell)", ylab="log(-log(S(Cox-Snell)))", main = "Weibull Cox-Snell Residuals", xlim=xlim, ylim=ylim )
+
+abline(0,1,col='red')
+}
+
+CoxSnellLN = function(cs,status,xlim=NULL,ylim=NULL)
+{
+kmcs = survfit( Surv(jitter(cs,amount=(max(cs)-min(cs))/1000),status) ~ 1 )$surv
+
+plot( log(-log(kmcs)) ~ sort(log(cs)) ,
+      xlab="log(Cox-Snell)", ylab="log(-log(S(Cox-Snell)))", main = "Log-Normal Cox-Snell Residuals", xlim=xlim, ylim=ylim )
 
 abline(0,1,col='red')
 }
@@ -123,14 +133,14 @@ Weibull Cox Snell
 ```{r}
 CSWeib <- -log( 1 - pweibull( Gov0$doublingTime , 1/0.8044466, exp(3.78953) ) )
 
-CoxSnell( CSWeib , Gov0$status )
+CoxSnellWeib( CSWeib , Gov0$status )
 ```
 Log-Normal Cox Snell
 
 ```{r}
 CSLN <- -log( 1 - plnorm( Gov0$doublingTime , 3.436134, 1.066429 ) )
 
-CoxSnell( CSLN , Gov0$status )
+CoxSnellLN( CSLN , Gov0$status )
 ```
 
 ```{r}
@@ -264,6 +274,12 @@ DemLN = function(x) {
 curve(DemLN, add = TRUE, col = "purple")
 ```
 
+```{r}
+curve(1-plnorm(x, mean = 3.306469, sd = 0.552448), ylab = "Survival", xlab = "Years")
+curve( 1-plnorm(x, mean = 3.436134, sd = 1.066429), add = TRUE, col = "gold")
+```
+
+
 Exponential Dem Cox Snell
 
 ```{r}
@@ -277,7 +293,7 @@ Weibull Dem Cox Snell
 ```{r}
 CSWeib <- -log( 1 - pweibull( Gov1$doublingTime , 1/0.441614, exp(3.535108) ) )
 
-CoxSnell( CSWeib , Gov1$status )
+CoxSnellWeib( CSWeib , Gov1$status )
 ```
 
 Dem Normal CS
@@ -293,7 +309,7 @@ Dem Log Normal CS
 ```{r}
 CSLN <- -log( 1 - plnorm( Gov1$doublingTime , 3.306469, 0.552448) )
 
-CoxSnell( CSLN , Gov1$status )
+CoxSnellLN( CSLN , Gov1$status )
 ```
 
 #### Log Normal Covariates Testing Democracy
@@ -380,7 +396,7 @@ summary(m1)
 coxMod <- coxph(Surv(doublingTime, status) ~ factor(regime_bmr_owid) , data = GovGDP)
 coxMod
 schoen <- cox.zph(coxMod)
-plot(schoen)
+plot(schoen, ylab = "Beta(t) For Democracy vs. Non-Democracy", xlab = "Years", main = "Schoenfeld Residuals With only Demcracy Status")
 abline(a= 0.1361, b = 0, add=TRUE, col = "red")
 abline(a= 0, b = 0, add=TRUE, col = "green")
 abline(a= 0.1361, b = 0, add=TRUE, col = "red")
@@ -393,12 +409,19 @@ abline(v=p$x, lty=3)
 coxMod <- coxph(Surv(doublingTime, status) ~ factor(regime_bmr_owid) + strata(Threshold) , data = GovGDP)
 coxMod
 schoen <- cox.zph(coxMod)
-plot(schoen)
+plot(schoen, ylab = "Beta(t) for Democracy vs. Non-Democracy", xlab = "Years", main = "Schoenfeld Residuals For Demcracy Status Stratified by Threshold")
 abline(a= 0.2913, b = 0, add=TRUE, col = "red")
 abline(a= 0, b = 0, add=TRUE, col = "green")
 
-p <- locator()
-abline(v=p$x, lty=3)
+```
+```{r}
+survreg(Surv(doublingTime, status) ~1 , data = Gov0, dist = "lognormal"  )
+survreg(Surv(doublingTime, status) ~1 , data = Gov0, dist = "weibull"  )
+
+```
+```{r}
+survreg(Surv(doublingTime, status) ~1 , data = Gov1, dist = "lognormal"  )
+survreg(Surv(doublingTime, status) ~1 , data = Gov1, dist = "weibull"  )
 ```
 
 

@@ -583,6 +583,7 @@ curve(DemExp, add = TRUE, col = "green")
 survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "gaussian"   )
 survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "weibull"   )
 survreg( Surv(doublingTime, status) ~ 1, data = Gov0, dist = "exponential"   )
+survreg(Surv(doublingTime, status)~1, data = Gov0, dist = 'lognormal')
 ```
 
 ```{r}
@@ -609,17 +610,25 @@ NoDemExpCens = function(x) {
   1-pexp(x, rate = rate)
 }
 
+
+NoDemLNCens = function(x) {
+  
+  1-plnorm(x, 3.436134 , 1.066429)
+}
+
 plot(Govkm0, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Non-Democracies")
 curve(NoDemNormCens, add = TRUE, col = "red")
 curve(NoDemWeibCens, add = TRUE, col = "blue")
 curve(NoDemExpCens, add = TRUE, col = "green")
-legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+curve(NoDemLNCens, add = TRUE, col = "orange")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model", "Log-Normal Model"),col=c("black","red", "blue", "green", "orange") , text.col=c("black","red", "blue", "green", "orange") , lty=1 , cex=0.8 )
 ```
 
 ```{r}
 survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "gaussian"   )
 survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "weibull"   )
 survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "exponential"   )
+survreg( Surv(doublingTime, status) ~ 1, data = Gov1, dist = "lognormal"   )
 ```
 
 ```{r}
@@ -646,11 +655,17 @@ DemExpCens = function(x) {
   1-pexp(x, rate = rate)
 }
 
+DemLNCens = function(x) {
+  
+  1-plnorm(x,3.306469, 0.552448 )
+}
+
 plot(Govkm1, conf.int = FALSE, ylab="GDP Doubling Probability" , xlab="Years", main = "Model Fitting For GDP Doubling Times for Democracies")
 curve(DemNormCens, add = TRUE, col = "red")
 curve(DemWeibCens, add = TRUE, col = "blue")
 curve(DemExpCens, add = TRUE, col = "green")
-legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model"),col=c("black","red", "blue", "green") , text.col=c("black","red", "blue", "green") , lty=1 , cex=0.8 )
+curve(DemLNCens, add = TRUE, col = "orange")
+legend(1,0.3,c("Kaplan-Meier","Normal Model", "Weibull Model", "Exponential Model", "Log-Normal Model"),col=c("black","red", "blue", "green", 'orange') , text.col=c("black","red", "blue", "green", 'orange') , lty=1 , cex=0.8 )
 ```
 
 ```{r}
