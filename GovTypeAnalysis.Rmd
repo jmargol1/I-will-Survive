@@ -424,4 +424,7 @@ survreg(Surv(doublingTime, status) ~1 , data = Gov1, dist = "lognormal"  )
 survreg(Surv(doublingTime, status) ~1 , data = Gov1, dist = "weibull"  )
 ```
 
+```{r}
+write.csv(GovGDP, "NewGovGDP.csv")
+```
 
