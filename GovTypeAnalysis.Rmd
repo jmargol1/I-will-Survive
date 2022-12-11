@@ -428,3 +428,28 @@ survreg(Surv(doublingTime, status) ~1 , data = Gov1, dist = "weibull"  )
 write.csv(GovGDP, "NewGovGDP.csv")
 ```
 
+```{r}
+GovGDPTVC<- read.csv("NewGovGDPTVC.csv") 
+
+GovGDPTVC <- GovGDPTVC[!is.na(GovGDPTVC$regime_bmr_owid), ] 
+
+GovGDPTVC <- GovGDPTVC %>%
+  filter(regime_bmr_owid == 1 | regime_bmr_owid == 0)
+```
+
+```{r}
+coxModTVC <- coxph(Surv(start, stop, status.time) ~ factor(regime_bmr_owid) + factor(regime_bmr_owid)*stop , data = GovGDPTVC)
+coxModTVC
+schoenTVC <- cox.zph(coxModTVC)
+plot(schoenTVC, ylab = "Beta(t) For Democracy vs. Non-Democracy", xlab = "Years", main = "Schoenfeld Residuals With only Demcracy Status With TVC")
+abline(a= -1.53685, b = 0.08400, add=TRUE, col = "red")
+```
+
+```{r}
+coxModTVCFull <- coxph(Surv(start, stop, status.time) ~ factor(regime_bmr_owid) + factor(regime_bmr_owid)*stop  + strata(Threshold) , data = GovGDPTVC)
+coxModTVCFull
+schoenTVCFull <- cox.zph(coxModTVCFull)
+plot(schoenTVCFull, ylab = "Beta(t) for Democracy vs. Non-Democracy", xlab = "Years", main = "Schoenfeld Residuals For Demcracy Status Stratified by Threshold")
+abline(a= -1.39743, b = 0.09397, add=TRUE, col = "red")
+```
+
