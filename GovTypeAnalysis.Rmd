@@ -122,6 +122,16 @@ abline(0,1,col='red')
 Exponential Cox Snell
 
 ```{r}
+CoxSnell = function(cs,status,xlim=NULL,ylim=NULL)
+{
+kmcs = survfit( Surv(jitter(cs,amount=(max(cs)-min(cs))/1000),status) ~ 1 )$surv
+
+plot( log(-log(kmcs)) ~ sort(log(cs)) ,
+      xlab="log(Cox-Snell)", ylab="log(-log(S(Cox-Snell)))", xlim=xlim, ylim=ylim )
+
+abline(0,1,col='red')
+}
+
 CSExp <- -log( 1 - pexp( Gov0$doublingTime , 1/exp(3.888212) ) )
 
 CoxSnell( CSExp , Gov0$status )
@@ -446,10 +456,37 @@ abline(a= -1.53685, b = 0.08400, add=TRUE, col = "red")
 ```
 
 ```{r}
+`Time Varying Representation` <- c("regime_bmr_owid = 1", "regime_bmr_owid = 1:Stop")
+Coefficient <- c(-1.53685, 0.08400)
+`Exponentiated Coefficient` <- c(0.21506, 1.08763)
+`P-Value` <- c(0.002929,0.000562)
+
+TVC <- data.frame(`Time Varying Representation`, Coefficient, `Exponentiated Coefficient`, `P-Value` )
+
+TVC %>%
+  kbl(caption = "Time Varying Coefficients of Cox-PH Model", col.names = c("Time Varying Representation", "Coefficient", "Exponentiated Coefficient", "P-Value")) %>%
+  kable_classic_2()
+```
+
+
+```{r}
 coxModTVCFull <- coxph(Surv(start, stop, status.time) ~ factor(regime_bmr_owid) + factor(regime_bmr_owid)*stop  + strata(Threshold) , data = GovGDPTVC)
 coxModTVCFull
 schoenTVCFull <- cox.zph(coxModTVCFull)
 plot(schoenTVCFull, ylab = "Beta(t) for Democracy vs. Non-Democracy", xlab = "Years", main = "Schoenfeld Residuals For Demcracy Status Stratified by Threshold")
 abline(a= -1.39743, b = 0.09397, add=TRUE, col = "red")
+```
+
+```{r}
+`Time Varying Representation` <- c("regime_bmr_owid = 1", "regime_bmr_owid = 1:Stop")
+Coefficient <- c(-1.39743, 0.09397)
+`Exponentiated Coefficient` <- c(0.24723, 1.09853)
+`P-Value` <- c(0.02247,0.00336)
+
+StratifiedTVC <- data.frame(`Time Varying Representation`, Coefficient, `Exponentiated Coefficient`, `P-Value` )
+
+StratifiedTVC %>%
+  kbl(caption = "Time Varying Coefficients of Cox-PH Model Stratified by Threshold", col.names = c("Time Varying Representation", "Coefficient", "Exponentiated Coefficient", "P-Value")) %>%
+  kable_classic_2()
 ```
 
