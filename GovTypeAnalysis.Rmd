@@ -411,9 +411,11 @@ abline(a= 0.1361, b = 0, add=TRUE, col = "red")
 abline(a= 0, b = 0, add=TRUE, col = "green")
 abline(a= 0.1361, b = 0, add=TRUE, col = "red")
 
+
 p <- locator()
 abline(v=p$x, lty=3)
 
+cox.zph(coxMod)
 ```
 ```{r}
 coxMod <- coxph(Surv(doublingTime, status) ~ factor(regime_bmr_owid) + strata(Threshold) , data = GovGDP)
@@ -423,6 +425,7 @@ plot(schoen, ylab = "Beta(t) for Democracy vs. Non-Democracy", xlab = "Years", m
 abline(a= 0.2913, b = 0, add=TRUE, col = "red")
 abline(a= 0, b = 0, add=TRUE, col = "green")
 
+cox.zph(coxMod)
 ```
 ```{r}
 survreg(Surv(doublingTime, status) ~1 , data = Gov0, dist = "lognormal"  )
